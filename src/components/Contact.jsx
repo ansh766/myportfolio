@@ -31,29 +31,47 @@ const Contact = ({ isDark }) => {
     };
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.message) {
-      toast({
-        title: "Error: Missing Arguments",
-        description: "Please provide all required parameters [name, email, message].",
-        variant: "destructive"
-      });
-      return;
-    }
+const handleSubmit = (e) => {
+  e.preventDefault();
 
+  if (!formData.name || !formData.email || !formData.message) {
+    toast({
+      title: "Error: Missing Arguments",
+      description: "Please provide all required parameters.",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  emailjs.send(
+    'service_ykc1o3q',      // EmailJS dashboard se
+    'service_ykc1o3q',     // EmailJS dashboard se
+    {
+      from_name: formData.name,
+      from_email: formData.email,
+      message: formData.message,
+      to_email: 'rastogiiansh@gmail.com'
+    },
+    'h1aUZ6dx78lmnr4It'       // EmailJS dashboard se
+  ).then(() => {
     setIsSubmitted(true);
     toast({
       title: "Success! Message Transmitted 🚀",
       description: "Connection established. I'll ping you back shortly!",
     });
-
     setTimeout(() => {
       setFormData({ name: '', email: '', message: '' });
       setIsSubmitted(false);
     }, 3000);
-  };
+  }).catch((error) => {
+    toast({
+      title: "Transmission Failed",
+      description: "Something went wrong. Try again!",
+      variant: "destructive"
+    });
+    console.error(error);
+  });
+};
 
   const contactInfo = [
     {
