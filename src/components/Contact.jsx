@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, Linkedin, Github, Send, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import emailjs from '@emailjs/browser'; // ✅ Make sure this is here
 
 const Contact = ({ isDark }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -20,59 +22,76 @@ const Contact = ({ isDark }) => {
       { threshold: 0.1 }
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+    const currentRef = sectionRef.current; // Store ref value
+    
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
   }, []);
 
-const handleSubmit = (e) => {
-  e.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  if (!formData.name || !formData.email || !formData.message) {
-    toast({
-      title: "Error: Missing Arguments",
-      description: "Please provide all required parameters.",
-      variant: "destructive"
+    if (!formData.name || !formData.email || !formData.message) {
+      toast({
+        title: "Error: Missing Arguments",
+        description: "Please provide all required parameters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Make sure emailjs is defined
+    if (!emailjs) {
+      console.error('EmailJS not loaded');
+      toast({
+        title: "Error",
+        description: "Email service not available",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    emailjs.send(
+      'service_ykc1o3q',
+      'template_5d0gm52',
+      {
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+        to_email: 'rastogiiansh@gmail.com'
+      },
+      'h1aUZ6dx78lmnr4It'
+    ).then(() => {
+      setIsSubmitted(true);
+      toast({
+        title: "Success! Message Transmitted 🚀",
+        description: "Connection established. I'll ping you back shortly!",
+      });
+      setTimeout(() => {
+        setFormData({ name: '', email: '', message: '' });
+        setIsSubmitted(false);
+      }, 3000);
+    }).catch((error) => {
+      console.error('EmailJS Error:', error);
+      toast({
+        title: "Transmission Failed",
+        description: error.text || "Something went wrong. Try again!",
+        variant: "destructive"
+      });
+    }).finally(() => {
+      setIsLoading(false);
     });
-    return;
   }
-
-  emailjs.send(
-    'service_ykc1o3q',      // EmailJS dashboard se
-    'template_5d0gm52',     // EmailJS dashboard se
-    {
-      from_name: formData.name,
-      from_email: formData.email,
-      message: formData.message,
-      to_email: 'rastogiiansh@gmail.com'
-    },
-    'h1aUZ6dx78lmnr4It'       // EmailJS dashboard se
-  ).then(() => {
-    setIsSubmitted(true);
-    toast({
-      title: "Success! Message Transmitted 🚀",
-      description: "Connection established. I'll ping you back shortly!",
-    });
-    setTimeout(() => {
-      setFormData({ name: '', email: '', message: '' });
-      setIsSubmitted(false);
-    }, 3000);
-  }).catch((error) => {
-    toast({
-      title: "Transmission Failed",
-      description: "Something went wrong. Try again!",
-      variant: "destructive"
-    });
-    console.error(error);
-  });
-};
-
   const contactInfo = [
     {
       icon: Mail,
@@ -103,7 +122,6 @@ const handleSubmit = (e) => {
       color: 'indigo'
     }
   ];
-
   const getColorClasses = (color) => {
     const colors = {
       cyan: { bg: 'bg-cyan-500', text: 'text-cyan-500' },
@@ -275,5 +293,6 @@ const handleSubmit = (e) => {
     </section>
   );
 };
+
 
 export default Contact;
