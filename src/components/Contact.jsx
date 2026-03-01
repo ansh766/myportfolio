@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, Linkedin, Github, Send, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import emailjs from '@emailjs/browser'; // ✅ Make sure this is here
 
 const Contact = ({ isDark }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,7 +21,7 @@ const Contact = ({ isDark }) => {
       { threshold: 0.1 }
     );
 
-    const currentRef = sectionRef.current; // Store ref value
+    const currentRef = sectionRef.current;
     
     if (currentRef) {
       observer.observe(currentRef);
@@ -35,7 +34,7 @@ const Contact = ({ isDark }) => {
     };
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.message) {
@@ -49,49 +48,49 @@ const Contact = ({ isDark }) => {
 
     setIsLoading(true);
 
-    // Make sure emailjs is defined
-    if (!emailjs) {
-      console.error('EmailJS not loaded');
-      toast({
-        title: "Error",
-        description: "Email service not available",
-        variant: "destructive"
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: 'c5ed5e2c-6424-4a33-b6e0-5372f9e50690', // Tumhari access key
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          from_name: formData.name,
+          subject: 'New Portfolio Contact Message',
+        })
       });
-      setIsLoading(false);
-      return;
-    }
 
-    emailjs.send(
-      'service_ykc1o3q',
-      'template_5d0gm52',
-      {
-        from_name: formData.name,
-        from_email: formData.email,
-        message: formData.message,
-        to_email: 'rastogiiansh@gmail.com'
-      },
-      'h1aUZ6dx78lmnr4It'
-    ).then(() => {
-      setIsSubmitted(true);
-      toast({
-        title: "Success! Message Transmitted 🚀",
-        description: "Connection established. I'll ping you back shortly!",
-      });
-      setTimeout(() => {
+      const data = await response.json();
+
+      if (data.success) {
+        setIsSubmitted(true);
+        toast({
+          title: "Success! Message Transmitted 🚀",
+          description: "Connection established. I'll ping you back shortly!",
+        });
         setFormData({ name: '', email: '', message: '' });
-        setIsSubmitted(false);
-      }, 3000);
-    }).catch((error) => {
-      console.error('EmailJS Error:', error);
+        setTimeout(() => {
+          setIsSubmitted(false);
+        }, 3000);
+      } else {
+        throw new Error('Failed to send');
+      }
+    } catch (error) {
+      console.error('Web3Forms Error:', error);
       toast({
         title: "Transmission Failed",
-        description: error.text || "Something went wrong. Try again!",
+        description: "Something went wrong. Try again!",
         variant: "destructive"
       });
-    }).finally(() => {
+    } finally {
       setIsLoading(false);
-    });
-  }
+    }
+  };
+
   const contactInfo = [
     {
       icon: Mail,
@@ -122,6 +121,7 @@ const Contact = ({ isDark }) => {
       color: 'indigo'
     }
   ];
+
   const getColorClasses = (color) => {
     const colors = {
       cyan: { bg: 'bg-cyan-500', text: 'text-cyan-500' },
@@ -215,6 +215,7 @@ const Contact = ({ isDark }) => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className={`peer w-full px-4 py-3 rounded-lg font-mono ${isDark ? 'bg-black/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'} border-2 focus:border-cyan-500 outline-none transition-all`}
                   placeholder=" "
+                  required
                 />
                 <label
                   htmlFor="name"
@@ -232,6 +233,7 @@ const Contact = ({ isDark }) => {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className={`peer w-full px-4 py-3 rounded-lg font-mono ${isDark ? 'bg-black/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'} border-2 focus:border-cyan-500 outline-none transition-all`}
                   placeholder=" "
+                  required
                 />
                 <label
                   htmlFor="email"
@@ -249,6 +251,7 @@ const Contact = ({ isDark }) => {
                   rows={5}
                   className={`peer w-full px-4 py-3 rounded-lg font-mono ${isDark ? 'bg-black/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'} border-2 focus:border-cyan-500 outline-none transition-all resize-none`}
                   placeholder=" "
+                  required
                 />
                 <label
                   htmlFor="message"
@@ -260,10 +263,15 @@ const Contact = ({ isDark }) => {
 
               <Button
                 type="submit"
-                disabled={isSubmitted}
+                disabled={isSubmitted || isLoading}
                 className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-6 rounded-lg font-bold font-mono hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50"
               >
-                {isSubmitted ? (
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </span>
+                ) : isSubmitted ? (
                   <span className="flex items-center justify-center gap-2">
                     <Terminal className="w-5 h-5" />
                     Transmission Complete
@@ -293,6 +301,5 @@ const Contact = ({ isDark }) => {
     </section>
   );
 };
-
 
 export default Contact;
