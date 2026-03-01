@@ -45,7 +45,7 @@ const handleSubmit = (e) => {
 
   emailjs.send(
     'service_ykc1o3q',      // EmailJS dashboard se
-    'service_ykc1o3q',     // EmailJS dashboard se
+    'template_5d0gm52',     // EmailJS dashboard se
     {
       from_name: formData.name,
       from_email: formData.email,
